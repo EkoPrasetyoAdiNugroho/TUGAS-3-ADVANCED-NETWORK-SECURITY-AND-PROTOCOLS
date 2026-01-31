@@ -26,23 +26,54 @@ Repositori ini berisi dokumentasi dan laporan praktikum mengenai analisis dampak
 ## 📝 Ringkasan Praktikum
 
 ### 1. Tujuan
-* [cite_start]Memahami mekanisme serangan **SYN Flood** (Network Layer) dan **Slowloris** (Application Layer)[cite: 11].
-* [cite_start]Menguji efektivitas **Firewall IPTables** dalam memulihkan ketersediaan layanan (*availability*)[cite: 12].
+* Memahami mekanisme serangan **SYN Flood** (Network Layer) dan **Slowloris** (Application Layer).
+* Menguji efektivitas **Firewall IPTables** dalam memulihkan ketersediaan layanan (*availability*).
 
 ### 2. Lingkungan Pengujian
 * **OS Attacker & Defender:** Kali Linux
-* [cite_start]**Target:** DVWA (Damn Vulnerable Web Application) pada Apache Web Server[cite: 19].
+* **Target:** DVWA (Damn Vulnerable Web Application) pada Apache Web Server.
 * **Tools:** Hping3, Nmap, IPTables, `top` (monitoring).
 
 ---
 
 ## ⚡ Cheatsheet Perintah (Technical Summary)
 
-Berikut adalah rangkuman perintah utama yang digunakan dalam praktikum ini (detail lengkap ada di dalam folder `LAPORAN`).
+Berikut adalah rangkuman perintah utama yang digunakan dalam praktikum ini.
 
 ### A. Persiapan Target (DVWA)
+Masuk ke direktori web server, unduh source code DVWA, dan berikan izin akses penuh agar aplikasi dapat berjalan dengan baik.
+
 ```bash
-# Clone DVWA & Atur Izin
+# Masuk ke direktori web server
 cd /var/www/html
-sudo git clone [https://github.com/digininja/DVWA.git](https://github.com/digininja/DVWA.git)
+
+# Clone repositori DVWA
+sudo git clone https://github.com/digininja/DVWA.git
+
+# Ubah izin akses folder (R/W/X)
 sudo chmod -R 777 /var/www/html/DVWA/
+```
+
+### B. Simulasi Serangan (Hping3)
+Perintah ini digunakan untuk melakukan serangan SYN Flood ke target. Serangan ini membanjiri server dengan permintaan koneksi palsu.
+
+```bash
+# Syntax: hping3 -S (Syn) -p (Port) -i (Interval) IP_Target
+sudo hping3 -S -p 80 -i u10 127.0.0.1
+```
+**Dampak:** Penggunaan CPU akan melonjak drastis (idle time mendekati 0%), menyebabkan layanan menjadi lambat atau tidak bisa diakses.
+
+### C. Mitigasi (IPTables)
+Untuk menanggulangi serangan, kita menerapkan aturan firewall untuk membatasi jumlah koneksi yang masuk (Rate Limiting).
+
+```bash
+# Batasi paket masuk maksimal 25 per menit dengan burst 100
+sudo iptables -A INPUT -p tcp --dport 80 -m limit --limit 25/minute --limit-burst 100 -j ACCEPT
+```
+**Hasil:** Paket yang melebihi batas akan dibuang (drop), sehingga beban server kembali normal dan layanan dapat diakses kembali.
+
+---
+
+> [!WARNING]
+> **Disclaimer**
+> Project ini dibuat semata-mata untuk tujuan pendidikan di mata kuliah Keamanan Jaringan Lanjut. Penulis tidak bertanggung jawab atas penyalahgunaan informasi ini.
